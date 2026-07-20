@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>联想校招舆情监测日报</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+<style>
+:root{
+  /* 联想校招主视觉配色:天空蓝 / 草地绿 / 吉祥物橙 / 黑描边 / 联想红点缀 */
+  --ink:#1F1F1F; --ink-2:rgba(31,31,31,.64); --ink-3:rgba(31,31,31,.42);
+  --paper:#FDF8EE; --card:#FFFFFF;
+  --sky:#BDE4FF; --sky-deep:#7EC8F5; --sky-line:#2E7FE0;
+  --grass:#6FCB4F; --grass-deep:#4CAF3E;
+  --orange:#FFA53D; --orange-deep:#FF8A00;
+  --red:#E2231A;
+  --pos:#3FA83F; --pos-bg:#E7F6DC; --pos-line:#8FD470;
+  --neu:#2E7FE0; --neu-bg:#E1F0FF; --neu-line:#8FC3F5;
+  --neg:#E2231A; --neg-bg:#FDE7E5; --neg-line:#F5A29C;
+  --sun-bg:#FFF3C9;
+  --split:#EFE8D8;
+  --r-lg:18px; --r-md:14px;
+  --hard:4px 4px 0 var(--ink);
+  --hard-hover:6px 6px 0 var(--ink);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:linear-gradient(180deg,#BFE5FF 0%,#EAF7F1 35%,#DCF2D4 70%,#ACDE8C 100%);
+  min-height:100vh; color:var(--ink); font-size:15px; line-height:1.95;
+  letter-spacing:.01em; overflow-x:hidden;
+}
+.page{max-width:860px;margin:0 auto;padding:28px 24px 80px}
+
+/* ===== 头图:主视觉的蓝天草地场景 ===== */
+.hero{
+  background:linear-gradient(180deg,#A9DBFF 0%,#CDEBFF 62%,#EAF7FF 100%);
+  border:2px solid var(--ink); border-radius:var(--r-lg);
+  padding:32px 34px 74px; color:var(--ink); margin-bottom:24px;
+  position:relative; overflow:hidden; box-shadow:var(--hard);
+}
+/* 太阳 */
+.hero::before{
+  content:"";position:absolute;right:34px;top:26px;width:74px;height:74px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#FFC46B,var(--orange) 70%);
+  border:2px solid var(--ink); box-shadow:3px 3px 0 rgba(31,31,31,.85);
+}
+/* 草地 */
+.hero::after{
+  content:"";position:absolute;left:-6%;right:-6%;bottom:-46px;height:96px;
+  background:linear-gradient(180deg,var(--grass),var(--grass-deep));
+  border-radius:100% 100% 0 0 / 100% 100% 0 0;border-top:2px solid var(--ink);
+}
+.hero .deco{position:absolute;z-index:1;user-select:none;pointer-events:none;line-height:1}
+.deco-star1{left:46%;top:22px;font-size:22px;color:var(--ink);transform:rotate(-12deg)}
+.deco-star2{right:126px;top:74px;font-size:13px;color:var(--red)}
+.deco-flower{right:52px;bottom:44px;font-size:20px;transform:rotate(10deg);z-index:2}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;position:relative;z-index:2}
+.hero .eyebrow{
+  display:inline-block;font-size:11px;font-weight:700;letter-spacing:.16em;margin-bottom:12px;
+  background:#fff;border:2px solid var(--ink);padding:2px 13px;border-radius:999px;color:var(--ink);
+  box-shadow:2px 2px 0 var(--ink);
+}
+.hero h1{font-size:27px;font-weight:900;letter-spacing:.02em;line-height:1.45}
+.hero .meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;position:relative;z-index:2}
+.meta-chip{
+  background:#fff;border:2px solid var(--ink);border-radius:999px;
+  padding:1px 14px;font-size:12.5px;font-weight:500;color:var(--ink);
+}
+.up-btn{
+  flex:none;display:inline-flex;align-items:center;gap:7px;
+  padding:8px 20px;border-radius:999px;font-size:13.5px;font-weight:700;cursor:pointer;
+  color:var(--ink);background:var(--orange);border:2px solid var(--ink);font-family:inherit;line-height:1.6;
+  box-shadow:var(--hard);transition:transform .15s,box-shadow .15s,background .15s;
+}
+.up-btn:hover,.up-btn.dragover{transform:translate(-2px,-2px);box-shadow:var(--hard-hover);background:#FFB45C}
+.up-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.up-btn:focus-visible{outline:3px solid var(--sky-line);outline-offset:2px}
+.up-btn .b-icon{font-size:15px;line-height:1}
+.uploader-input{display:none}
+.up-status{margin-top:10px;font-size:12.5px;font-weight:600;display:none;position:relative;z-index:2}
+.up-status.ok{display:block;color:#1F6B1F}
+.up-status.err{display:block;color:var(--red)}
+.up-status.loading{display:block;color:var(--sky-line)}
+
+/* ===== 统计卡:硬投影色块 ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.stat{
+  border-radius:var(--r-md);padding:15px 17px;border:2px solid var(--ink);
+  box-shadow:var(--hard);transition:transform .15s,box-shadow .15s;
+}
+.stat:hover{transform:translate(-2px,-2px) rotate(-.5deg);box-shadow:var(--hard-hover)}
+.stat .s-label{font-size:12.5px;color:var(--ink-2);font-weight:700}
+.stat .s-num{font-size:31px;font-weight:900;line-height:1.25;font-variant-numeric:tabular-nums}
+.stat .s-sub{font-size:11.5px;color:var(--ink-3);line-height:1.6;font-weight:500}
+.stat.pos{background:var(--pos-bg)} .stat.pos .s-num{color:var(--pos)}
+.stat.neu{background:var(--neu-bg)} .stat.neu .s-num{color:var(--neu)}
+.stat.neg{background:var(--neg-bg)} .stat.neg .s-num{color:var(--neg)}
+.stat.trend{background:var(--sun-bg)}
+.stat.trend .s-num{font-size:20px;padding-top:8px;color:#A85E00}
+
+/* ===== 锚点导航 ===== */
+.anchor-bar{
+  position:sticky;top:10px;z-index:20;background:#fff;
+  border:2px solid var(--ink);border-radius:999px;box-shadow:var(--hard);margin-bottom:28px;
+  display:flex;gap:2px;padding:6px;overflow-x:auto;scrollbar-width:none;
+}
+.anchor-bar::-webkit-scrollbar{display:none}
+.anchor-bar a{
+  flex:none;padding:5px 14px;border-radius:999px;font-size:13px;color:var(--ink-2);
+  text-decoration:none;transition:background .15s,color .15s;white-space:nowrap;font-weight:600;
+}
+.anchor-bar a:hover{background:#D9F25B;color:var(--ink)}
+.anchor-bar a .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;border:1.5px solid var(--ink)}
+.dot.d-pos{background:var(--pos)} .dot.d-neu{background:var(--sky-deep)} .dot.d-neg{background:var(--neg)}
+
+/* ===== 内容卡片 ===== */
+.card{
+  background:var(--card);border:2px solid var(--ink);border-radius:var(--r-lg);
+  box-shadow:var(--hard);margin-bottom:28px;overflow:hidden;
+  transition:transform .15s,box-shadow .15s;scroll-margin-top:78px;
+}
+.card:hover{transform:translate(-2px,-2px);box-shadow:var(--hard-hover)}
+.card-head{display:flex;align-items:center;gap:13px;padding:17px 32px;border-bottom:2px solid var(--ink)}
+.card-head .idx{
+  width:31px;height:31px;border-radius:9px;flex:none;
+  background:var(--orange);color:var(--ink);border:2px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;
+  transform:rotate(-6deg);box-shadow:2px 2px 0 var(--ink);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.card:hover .card-head .idx{transform:rotate(4deg) scale(1.08)}
+.card-head h2{font-size:17px;font-weight:800}
+.card-body{padding:24px 32px 28px}
+
+/* 情感差异化 */
+.card.sent-pos .idx{background:var(--pos-line)}
+.card.sent-neu .idx{background:var(--sky-deep)}
+.card.sent-neg .idx{background:var(--neg-line)}
+.card.sent-pos .card-head{background:var(--pos-bg)}
+.card.sent-neu .card-head{background:var(--neu-bg)}
+.card.sent-neg .card-head{background:var(--neg-bg)}
+.sent-badge{
+  display:inline-block;margin-left:auto;padding:0 12px;border-radius:999px;
+  font-size:12px;font-weight:700;line-height:1.95;border:2px solid var(--ink);background:#fff;
+}
+.sent-badge.b-pos{color:var(--pos)}
+.sent-badge.b-neu{color:var(--neu)}
+.sent-badge.b-neg{color:var(--neg)}
+
+/* 正文 */
+.card-body p{margin:12px 0;color:var(--ink)}
+.card-body p:first-child{margin-top:0}
+.card-body strong{font-weight:800}
+.card-body ul{margin:10px 0;list-style:none}
+.card-body ul li{position:relative;padding-left:23px;margin:10px 0}
+.card-body ul li::before{
+  content:"";position:absolute;left:3px;top:.66em;width:9px;height:9px;border-radius:3px;
+  background:var(--orange);border:1.5px solid var(--ink);transform:rotate(45deg);
+}
+.card-body ul ul{margin:8px 0 4px}
+.card-body ul ul li{color:var(--ink-2)}
+.card-body ul ul li::before{background:var(--sky);transform:none;border-radius:50%;width:8px;height:8px}
+.card-body a{color:var(--sky-line);text-decoration:none;font-weight:600;transition:color .15s}
+.card-body a:hover{color:var(--orange-deep);text-decoration:underline wavy 1.5px;text-underline-offset:4px}
+.card-body table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+.card-body table td,.card-body table th{border:1.5px solid var(--ink);padding:10px 14px;color:var(--ink-2)}
+.card-body table tr:hover td{background:var(--paper)}
+
+/* 小节标题:荧光笔划线(青柠色,同参考网页) */
+.sub-h{font-size:15px;font-weight:800;margin:32px 0 14px;line-height:1.6;display:table;padding:0 5px;
+  box-shadow:inset 0 -0.42em 0 #D9F25B}
+.sub-h:first-child{margin-top:0}
+.sub-h.sub-pos{box-shadow:inset 0 -0.42em 0 var(--pos-line)}
+.sub-h.sub-neu{box-shadow:inset 0 -0.42em 0 var(--neu-line)}
+.sub-h.sub-neg{box-shadow:inset 0 -0.42em 0 var(--neg-line)}
+
+/* 键值行 */
+.kv{display:flex;gap:16px;align-items:baseline;padding:9px 2px;border-bottom:1.5px dashed var(--split);font-size:14px}
+.kv:last-of-type{border-bottom:none}
+.kv .kv-label{flex:none;min-width:8.5em;color:var(--ink-3);font-size:13px;font-weight:600}
+.kv .kv-value{color:var(--ink);min-width:0}
+.kv .kv-value.dim{color:var(--ink-3)}
+
+/* 帖子条目卡:硬投影用情感色 */
+.post{
+  border:2px solid var(--ink);border-radius:var(--r-md);padding:20px 24px;margin:20px 2px 20px 0;background:#fff;
+  transition:transform .15s,box-shadow .15s;
+}
+.post:first-child{margin-top:2px}
+.card.sent-pos .post{box-shadow:4px 4px 0 var(--pos-line)}
+.card.sent-neu .post{box-shadow:4px 4px 0 var(--neu-line)}
+.card.sent-neg .post{box-shadow:4px 4px 0 var(--neg-line)}
+.card.sent-pos .post:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--pos)}
+.card.sent-neu .post:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--neu)}
+.card.sent-neg .post:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--neg)}
+.post .post-no{
+  display:inline-block;font-size:11px;font-weight:900;letter-spacing:.1em;
+  padding:0 11px;border-radius:999px;line-height:2;border:2px solid var(--ink);color:var(--ink);
+}
+.card.sent-pos .post .post-no{background:var(--pos-bg)}
+.card.sent-neu .post .post-no{background:var(--neu-bg)}
+.card.sent-neg .post .post-no{background:var(--neg-bg)}
+.post .post-meta{margin:11px 0 4px;display:flex;flex-wrap:wrap;gap:9px;align-items:center;font-size:13px;color:var(--ink-3)}
+.post .post-title{font-size:15.5px;font-weight:800;margin:8px 0 2px;line-height:1.7}
+.post p{font-size:14px}
+
+/* 字段 */
+.field{margin:16px 0 0}
+.field .field-label{font-size:11.5px;color:var(--ink-3);letter-spacing:.08em;margin-bottom:5px;font-weight:700}
+.field .field-body{font-size:14px;color:var(--ink)}
+
+/* 原文引用:便利贴 */
+.quote{
+  background:var(--sun-bg);border:2px solid var(--ink);border-radius:3px 14px 14px 14px;
+  padding:12px 16px;font-size:13.5px;color:var(--ink-2);line-height:1.9;
+  box-shadow:3px 3px 0 rgba(31,31,31,.16);
+}
+
+/* 平台标识 */
+.plat{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);font-weight:700}
+.plat .plat-logo{
+  width:22px;height:22px;border-radius:6px;object-fit:cover;display:block;
+  border:1.5px solid var(--ink);box-shadow:1.5px 1.5px 0 var(--ink);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.plat:hover .plat-logo{transform:scale(1.15) rotate(-5deg)}
+
+/* Tag:参考网页的描边胶囊 */
+.tag{
+  display:inline-block;padding:0 12px;border-radius:999px;font-size:12px;font-weight:700;line-height:2;
+  border:2px solid var(--ink);vertical-align:baseline;transition:transform .12s;color:var(--ink);
+}
+.tag:hover{transform:translate(-1px,-1px)}
+.tag-neu{background:var(--neu-bg);color:var(--neu)}
+.tag-pos{background:var(--pos-bg);color:var(--pos)}
+.tag-neg{background:var(--neg-bg);color:var(--neg)}
+.tag-plat{background:#fff0f6;color:#c41d7f}
+.tag-plat2{background:#e6fffb;color:#08979c}
+.tag-time{background:#fff;color:var(--ink-2);font-weight:600}
+
+/* 提示条 */
+.alert{
+  display:flex;gap:10px;align-items:flex-start;border-radius:var(--r-md);
+  padding:12px 16px;margin:14px 0;font-size:13.5px;border:2px dashed var(--ink);line-height:1.85;
+}
+.alert .a-icon{flex:none}
+.alert-info{background:var(--neu-bg);color:var(--ink-2)}
+.alert-info .a-icon{color:var(--sky-line)}
+.alert-empty{background:var(--paper);color:var(--ink-3);border-color:rgba(31,31,31,.35)}
+.alert-empty .a-icon{color:var(--ink-3)}
+.card.sent-pos .alert-empty .a-icon{color:var(--pos)}
+.card.sent-neg .alert-empty .a-icon{color:var(--neg)}
+
+.footer-note{text-align:center;color:var(--ink-3);font-size:12.5px;margin-top:36px;line-height:2;font-weight:500}
+
+@media (max-width:720px){
+  .page{padding:16px 12px 52px}
+  .hero{padding:24px 20px 66px}
+  .hero h1{font-size:21px}
+  .hero-top{flex-wrap:wrap}
+  .hero::before{width:52px;height:52px;right:20px;top:18px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .card-head{padding:15px 18px}
+  .card-body{padding:18px 18px 22px}
+  .post{padding:16px 16px}
+  .kv{flex-direction:column;gap:2px}
+  .kv .kv-label{min-width:0}
+  .anchor-bar{border-radius:var(--r-md)}
+}
+
+/* 按钮列 */
+.btn-col{display:flex;flex-direction:column;gap:10px;align-items:stretch;flex:none}
+.mail-btn{background:#fff}
+.mail-btn:hover{background:#F2FBFF}
+/* 截图时隐藏交互元素,并给内容区挂上页面同款渐变背景 */
+.capturing .btn-col,.capturing .up-status{display:none!important}
+.capturing .page{background:linear-gradient(180deg,#BFE5FF 0%,#EAF7F1 35%,#DCF2D4 70%,#ACDE8C 100%);border-radius:12px}
+.capturing .card,.capturing .stat,.capturing .post{transform:none!important}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 标题区(含上传按钮) -->
+  <div class="hero">
+    <span class="deco deco-star1">✦</span>
+    <span class="deco deco-star2">✦</span>
+    <span class="deco deco-flower">🌸</span>
+    <div class="hero-top">
+      <div>
+        <div class="eyebrow">LENOVO 校园招聘 · SHAPE WHAT'S NEXT</div>
+        <h1 id="reportTitle">联想校招近3日舆情监测日报</h1>
+      </div>
+      <div class="btn-col">
+        <button type="button" class="up-btn" id="uploader" aria-label="上传新的舆情日报 docx 文件" title="支持点击选择或将 .docx 拖到按钮上">
+          <span class="b-icon">⤒</span>上传新一期日报
+        </button>
+        <button type="button" class="up-btn mail-btn" id="imgBtn" aria-label="把整个页面生成一张高清长图">
+          <span class="b-icon">📸</span>生成长图
+        </button>
+      </div>
+      <input type="file" class="uploader-input" id="fileInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+    </div>
+    <div class="up-status" id="upStatus"></div>
+    <div class="meta" id="reportMeta">
+      <span class="meta-chip">统计周期：2026年7月15日 - 2026年7月17日</span>
+      <span class="meta-chip">报告生成时间：2026年7月17日 14:00</span>
+    </div>
+  </div>
+
+  <!-- 统计概览 -->
+  <div class="stats" id="statsRow">
+    <div class="stat pos"><div class="s-label">😊 正面舆情</div><div class="s-num" id="stPos">0</div><div class="s-sub">条</div></div>
+    <div class="stat neu"><div class="s-label">💬 中性舆情</div><div class="s-num" id="stNeu">2</div><div class="s-sub">条 · 占比100%</div></div>
+    <div class="stat neg"><div class="s-label">🚨 负面舆情</div><div class="s-num" id="stNeg">0</div><div class="s-sub">条 · 高风险 0 条</div></div>
+    <div class="stat trend"><div class="s-label">📈 整体态势</div><div class="s-num" id="stTrend">平稳期</div><div class="s-sub" id="stTrendSub">声量偏低 · 秋招空档期</div></div>
+  </div>
+
+  <!-- 锚点导航 -->
+  <nav class="anchor-bar" id="anchorBar"></nav>
+
+  <!-- 报告正文 -->
+  <main id="reportBody"></main>
+
+  <div class="footer-note" id="footerNote">（注：部分内容可能由 AI 生成）</div>
+</div>
+
+
+<script>
+/* ================= 平台 Logo(内嵌,无需外链) ================= */
+const PLATFORM_LOGOS = {
+  '小红书':'data:image/jpeg;base64,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',
+  '牛客网':'data:image/jpeg;base64,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'
+};
+function platIcon(name){
+  const src = PLATFORM_LOGOS[name];
+  if(!src) return '<span class="tag tag-time">'+name+'</span>';
+  return '<span class="plat"><img class="plat-logo" src="'+src+'" alt="'+name+'">'+name+'</span>';
+}
+
+/* ================= 初始报告数据(2026-07-17期) ================= */
+const INITIAL_SECTIONS = [
+{ title:"一、采集说明", html:`
+<div class="sub-h">1.1 采集平台</div>
+<ul>
+<li>牛客网（nowcoder.com）</li>
+<li>小红书（xiaohongshu.com）</li>
+</ul>
+<div class="sub-h">1.2 筛选规则</div>
+<div class="kv"><span class="kv-label">时间筛选</span><span class="kv-value">仅保留发布时间≤3天的新鲜内容，过期内容自动过滤丢弃</span></div>
+<div class="kv"><span class="kv-label">排序规则</span><span class="kv-value">按发布时间倒序检索，优先抓取最新内容</span></div>
+<div class="kv"><span class="kv-label">内容标准</span><span class="kv-value">每条舆情必须携带可直接访问的原帖链接</span></div>
+<div class="sub-h">1.3 采集时间范围</div>
+<p>2026年7月15日 00:00 - 2026年7月17日 14:00</p>
+`},
+{ title:"二、正面舆情明细", html:`
+<div class="alert alert-empty"><span class="a-icon">◎</span><span>本期无正面舆情</span></div>
+<p>近3天监测范围内未采集到正面评价类舆情内容。当前处于7月中旬秋招空档期，联想校招尚未进入大规模笔试面试阶段，正面评价类内容产出较少属正常现象。</p>
+`},
+{ title:"三、中性舆情明细", html:`
+<div class="post">
+<div class="post-no">第1条</div>
+<div class="post-meta">${platIcon('小红书')}<span class="tag tag-time">2天前（约7月15日）</span><a href="https://www.xiaohongshu.com/explore/6a56722c0000000011015acb" target="_blank" rel="noopener">查看原文 ↗</a></div>
+<div class="post-title">联想校招这样正常吗？没有签什么合同，直接要这些材料？</div>
+<div class="field"><div class="field-label">核心原文摘录</div>
+<blockquote class="quote">各位同学，欢迎加入联想大家庭，有几点资料需要大家快速准备：1、尽快办理招商银行，已经有的不需要。2.在校证明。3身份证。另外群里改好姓名、备注、私加我微信。信息各自私发给我</blockquote></div>
+<div class="field"><div class="field-label">内容简要观点</div>
+<div class="field-body">求职者对联想校招入职流程提出疑问，质疑还未签合同就要求准备银行卡、在校证明、身份证等材料是否合理，引发评论区讨论</div></div>
+<div class="field"><div class="field-label">舆情标签</div>
+<div class="field-body"><span class="tag tag-neu">中性（流程疑问）</span></div></div>
+</div>
+<div class="post">
+<div class="post-no">第2条</div>
+<div class="post-meta">${platIcon('小红书')}<span class="tag tag-time">1天前（约7月16日）</span><a href="https://www.xiaohongshu.com/explore/6a5776f5000000000f00782f" target="_blank" rel="noopener">查看原文 ↗</a></div>
+<div class="post-title">有在联想北京idg部门工作的员工嘛？我想咨询一些问题</div>
+<div class="field"><div class="field-label">核心原文摘录</div>
+<blockquote class="quote">我想咨询一些问题 #联想校招面试 #联想 #联想校园 #联想校招 #联想面试 #大厂 #求助offer选择 #求职季 #互联网大厂</blockquote></div>
+<div class="field"><div class="field-label">内容简要观点</div>
+<div class="field-body">求职者寻求联想北京IDG部门的内部工作信息，用于校招面试和offer决策参考</div></div>
+<div class="field"><div class="field-label">舆情标签</div>
+<div class="field-body"><span class="tag tag-neu">中性（求职求助）</span></div></div>
+</div>
+`},
+{ title:"四、负面舆情明细", html:`
+<div class="alert alert-empty"><span class="a-icon">◎</span><span>本期无负面舆情</span></div>
+<p>近3天监测范围内未采集到明确负面吐槽、投诉类舆情内容。监测期内未出现集中性负面舆情，整体舆情环境平稳。</p>
+`},
+{ title:"五、分维度舆情总结", html:`
+<div class="sub-h sub-pos">5.1 近3天正面舆情总结</div>
+<p><strong>本期正面舆情数量：0条</strong></p>
+<div class="kv"><span class="kv-label">高频正向关键词</span><span class="kv-value dim">无</span></div>
+<div class="kv"><span class="kv-label">求职者认可的亮点</span><span class="kv-value dim">暂无新增正面评价</span></div>
+<div class="kv"><span class="kv-label">好评集中方向</span><span class="kv-value dim">监测期内无正面舆情产出</span></div>
+<div class="alert alert-info"><span class="a-icon">ℹ</span><span>备注：当前处于7月中旬秋招空档期，联想校招尚未进入大规模笔试面试阶段，正面评价类内容产出较少属正常现象。</span></div>
+<div class="sub-h sub-neu">5.2 近3天中性舆情总结</div>
+<p><strong>本期中性舆情数量：2条，占比100%</strong></p>
+<p><strong>内容分类概况：</strong></p>
+<ul>
+<li><strong>入职流程咨询类（1条）</strong>：求职者对联想校招入职前材料准备流程提出合理性疑问，涉及银行卡办理、在校证明提交等具体环节，属于正常求职信息确认</li>
+<li><strong>部门信息求助类（1条）</strong>：求职者针对联想北京IDG部门寻求内部工作信息，用于面试准备和offer选择，属于典型求职决策前的信息搜集行为</li>
+</ul>
+<p><strong>整体特征</strong>：</p>
+<ul>
+<li>全部为求职过程中的正常信息咨询和求助类内容</li>
+<li>无明显情感倾向，以信息获取为主要诉求</li>
+<li>关注点集中在入职流程、部门信息等具体实操层面</li>
+</ul>
+<div class="sub-h sub-neg">5.3 近3天负面舆情总结</div>
+<p><strong>本期负面舆情数量：0条，高风险负面内容：0条</strong></p>
+<div class="kv"><span class="kv-label">集中投诉痛点</span><span class="kv-value dim">暂无</span></div>
+<div class="kv"><span class="kv-label">高频负面槽点</span><span class="kv-value dim">暂无</span></div>
+<div class="kv"><span class="kv-label">风险点</span><span class="kv-value dim">暂无</span></div>
+<div class="kv"><span class="kv-label">集中吐槽环节</span><span class="kv-value dim">暂无</span></div>
+<div class="alert alert-info"><span class="a-icon">ℹ</span><span>备注：监测期内未出现集中性负面舆情，整体舆情环境平稳。</span></div>
+`},
+{ title:"六、风险提示", html:`
+<div class="sub-h">6.1 重点关注问题</div>
+<p><strong>本期无高风险负面舆情</strong></p>
+<div class="sub-h">6.2 参考判断</div>
+<ul>
+<li><strong>舆情整体态势</strong>：平稳期。近3天联想校招相关舆情总量较少，以中性咨询类内容为主，无正负向极端评价，整体声量偏低。</li>
+<li><strong>时间节点特征</strong>：当前为7月中旬，处于秋招正式批启动前的空档期，校招相关讨论活跃度较低符合行业规律。预计8月起随着秋招提前批/正式批启动，舆情量将显著上升。</li>
+<li><strong>潜在关注点</strong>：
+<ul>
+<li>入职材料准备流程的透明度可适当优化，避免新入职生产生流程疑虑</li>
+<li>IDG等核心业务部门的求职者信息需求较高，可考虑增加官方部门介绍内容</li>
+</ul>
+</li>
+<li><strong>后续监测建议</strong>：持续关注8月秋招启动后的舆情变化，重点跟踪笔试、面试、offer发放等关键节点的求职者反馈。</li>
+</ul>
+<div class="alert alert-info"><span class="a-icon">ℹ</span><span><strong>报告说明</strong>：本日报基于牛客网、小红书两大平台公开可访问内容自动采集生成，受平台登录权限、搜索算法及发布延迟影响，可能存在部分内容未覆盖情况，仅供内部参考。</span></div>
+`},
+{ title:"七、行业校招舆情参考", html:`
+<div class="sub-h">7.1 整体态势</div>
+<p>当前为7月中旬秋招空档期，互联网大厂校招整体处于提前批启动阶段，大规模笔试面试尚未开始，行业舆情总量普遍偏低。</p>
+<div class="sub-h">7.2 重点企业动态</div>
+<div class="kv"><span class="kv-label">腾讯</span><span class="kv-value">腾讯音乐娱乐集团2027技术大咖计划已启动，求职平台出现相关内推码分享，暂无负面舆情</span></div>
+<div class="kv"><span class="kv-label">字节跳动</span><span class="kv-value">校招提前批信息陆续放出，以正常招聘信息和内推为主，舆情平稳</span></div>
+<div class="kv"><span class="kv-label">小米</span><span class="kv-value">2027届校招内推信息已出现在各求职平台，属于正常招聘节奏</span></div>
+<div class="kv"><span class="kv-label">阿里/百度/美团/京东/华为</span><span class="kv-value">近3天暂未发现高热度校招相关舆情或重大负面事件</span></div>
+<div class="sub-h">7.3 行业共性观察</div>
+<ul>
+<li>27届秋招提前批已陆续启动，预计8月将进入全面爆发期</li>
+<li>当前阶段以信息发布、内推码分享为主，求职者评价类内容较少</li>
+<li>暂未出现行业性负面舆情（如大规模毁offer、裁员等）</li>
+</ul>
+<div class="alert alert-empty"><span class="a-icon">◎</span><span>监测范围：腾讯、字节跳动、阿里、百度、美团、京东、华为、小米 8家头部企业　数据来源：牛客网、小红书公开内容</span></div>
+`}
+];
+
+/* ================= 渲染 ================= */
+const CN_NUM = {"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10};
+
+function sentimentOf(name){
+  if(name.includes('正面')) return 'pos';
+  if(name.includes('中性')) return 'neu';
+  if(name.includes('负面')) return 'neg';
+  return null;
+}
+const SENT_TEXT = {pos:'正面',neu:'中性',neg:'负面'};
+
+function renderSections(sections){
+  const body = document.getElementById('reportBody');
+  const nav = document.getElementById('anchorBar');
+  body.innerHTML = ''; nav.innerHTML = '';
+  sections.forEach((sec,i)=>{
+    const id = 'sec-'+(i+1);
+    const m = sec.title.match(/^([一二三四五六七八九十]+)、\s*(.*)$/);
+    const idx = m ? (CN_NUM[m[1]]||i+1) : i+1;
+    const name = m ? m[2] : sec.title;
+    const sent = sentimentOf(name);
+
+    const card = document.createElement('section');
+    card.className = 'card' + (sent ? ' sent-'+sent : '');
+    card.id = id;
+    const badge = sent ? `<span class="sent-badge b-${sent}">${SENT_TEXT[sent]}</span>` : '';
+    card.innerHTML = `<div class="card-head"><span class="idx">${idx}</span><h2>${escapeHtml(name)}</h2>${badge}</div>
+                      <div class="card-body">${sec.html}</div>`;
+    body.appendChild(card);
+
+    const a = document.createElement('a');
+    a.href = '#'+id;
+    a.innerHTML = (sent ? `<span class="dot d-${sent}"></span>` : '') + escapeHtml(name);
+    nav.appendChild(a);
+  });
+}
+
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* 当前报告状态(供邮件生成使用) */
+let CURRENT = {
+  title:'联想校招近3日舆情监测日报',
+  metaChips:['统计周期：2026年7月15日 - 2026年7月17日','报告生成时间：2026年7月17日 14:00'],
+  stats:{pos:'0',neu:'2',neg:'0',neuSub:'条 · 占比100%',negSub:'条 · 高风险 0 条',trend:'平稳期'},
+  sections:INITIAL_SECTIONS
+};
+
+renderSections(INITIAL_SECTIONS);
+
+/* ================= 上传解析 ================= */
+const uploader = document.getElementById('uploader');
+const fileInput = document.getElementById('fileInput');
+const upStatus = document.getElementById('upStatus');
+
+uploader.addEventListener('click', ()=>fileInput.click());
+['dragover','dragenter'].forEach(ev=>uploader.addEventListener(ev,e=>{e.preventDefault();uploader.classList.add('dragover');}));
+['dragleave','drop'].forEach(ev=>uploader.addEventListener(ev,e=>{e.preventDefault();uploader.classList.remove('dragover');}));
+uploader.addEventListener('drop', e=>{ const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) handleFile(f); });
+fileInput.addEventListener('change', ()=>{ if(fileInput.files[0]) handleFile(fileInput.files[0]); fileInput.value=''; });
+
+function setStatus(cls,msg){ upStatus.className='up-status '+cls; upStatus.textContent=msg; }
+
+async function handleFile(file){
+  if(!/\.docx$/i.test(file.name)){ setStatus('err','仅支持 .docx 格式的 Word 文档'); return; }
+  setStatus('loading','正在解析「'+file.name+'」…');
+  try{
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml({arrayBuffer:buf});
+    applyReport(result.value, file.name);
+    setStatus('ok','已加载：'+file.name+'（'+new Date().toLocaleString('zh-CN')+'）');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(err){
+    console.error(err);
+    setStatus('err','解析失败：'+(err.message||'文件格式异常，请确认为正常的 Word 文档'));
+  }
+}
+
+/* 把 mammoth 输出的 HTML 拆成章节并套用样式 */
+function applyReport(rawHtml, filename){
+  const root = document.createElement('div');
+  root.innerHTML = rawHtml;
+  const nodes = Array.from(root.children);
+
+  let title = null; const metaChips = []; const sections = [];
+  let current = null;
+
+  nodes.forEach(node=>{
+    const text = (node.textContent||'').trim();
+    if(!text){ return; }
+    if(!title && !current && text.length<=40 && /日报|周报|月报|报告/.test(text)){ title = text; return; }
+    if(!current && /^(统计周期|报告生成时间|采集时间|生成时间)/.test(text)){ metaChips.push(text); return; }
+    const isHeading = /^[一二三四五六七八九十]+、/.test(text) && text.length<=40;
+    if(isHeading){
+      current = { title:text, parts:[] };
+      sections.push(current);
+      return;
+    }
+    if(current){ current.parts.push(node); }
+  });
+
+  if(sections.length===0){
+    sections.push({title:'一、报告内容', parts:nodes});
+  }
+
+  const finalSections = sections.map(sec=>({ title:sec.title, html:enhance(sec.parts.map(n=>n.outerHTML).join('')) }));
+
+  if(title) document.getElementById('reportTitle').textContent = title.replace(/\*/g,'');
+  document.getElementById('reportMeta').innerHTML =
+    metaChips.map(t=>`<span class="meta-chip">${escapeHtml(t)}</span>`).join('');
+
+  // 全角数字转半角,提高匹配鲁棒性
+  const plain = (root.textContent||'').replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0));
+  const num = re => { const m = plain.match(re); return m ? m[1] : null; };
+  // 兜底:直接数各"明细"章节里实际有几条(第N条),这是最可靠的事实来源
+  const countIn = sent => {
+    let c = 0;
+    finalSections.forEach(sec=>{
+      const mm = sec.title.match(/^[一二三四五六七八九十]+、\s*(.*)$/);
+      const nm = mm ? mm[1] : sec.title;
+      if(sentimentOf(nm)===sent && /明细/.test(nm)){
+        c += (sec.html.match(/第\d+条/g)||[]).length;
+      }
+    });
+    return String(c);
+  };
+  // 优先读总结里的显式数字;读不到就实数明细;绝不沿用上一期的旧值
+  const pos = num(/正面舆情数量[：:]\s*(\d+)/) ?? countIn('pos');
+  const neu = num(/中性舆情数量[：:]\s*(\d+)/) ?? countIn('neu');
+  const neg = num(/负面舆情数量[：:]\s*(\d+)/) ?? countIn('neg');
+  const risk = num(/高风险负面内容[：:]\s*(\d+)/) ?? '0';
+  let neuPct = num(/中性舆情数量[：:]\s*\d+条[，,]\s*占比(\d+)%?/);
+  const total = (+pos)+(+neu)+(+neg);
+  if(neuPct===null && total>0) neuPct = String(Math.round((+neu)/total*100));
+  document.getElementById('stPos').textContent = pos;
+  document.getElementById('stNeu').textContent = neu;
+  document.getElementById('stNeg').textContent = neg;
+  document.querySelector('.stat.neu .s-sub').textContent = neuPct!==null ? ('条 · 占比'+neuPct+'%') : '条';
+  document.querySelector('.stat.neg .s-sub').textContent = '条 · 高风险 '+risk+' 条';
+  const trendM = plain.match(/舆情整体态势[^：:]*[：:]\s*([^。，,\s]{2,6})/);
+  document.getElementById('stTrend').textContent = trendM ? trendM[1].replace(/[。.]$/,'') : '—';
+  document.getElementById('stTrendSub').textContent = '来源：'+filename;
+
+  renderSections(finalSections);
+
+  CURRENT = {
+    title: document.getElementById('reportTitle').textContent,
+    metaChips: metaChips,
+    stats:{
+      pos: document.getElementById('stPos').textContent,
+      neu: document.getElementById('stNeu').textContent,
+      neg: document.getElementById('stNeg').textContent,
+      neuSub: document.querySelector('.stat.neu .s-sub').textContent,
+      negSub: document.querySelector('.stat.neg .s-sub').textContent,
+      trend: document.getElementById('stTrend').textContent
+    },
+    sections: finalSections
+  };
+}
+
+/* 样式增强:上传的文档也应用同一套易读版式 */
+function enhance(html){
+  let s = html;
+  // 子标题 1.1 / 5.2 …
+  s = s.replace(/<p><strong>(\d+\.\d+[^<]{0,30})<\/strong><\/p>/g,'<div class="sub-h">$1</div>');
+  s = s.replace(/<h[1-6][^>]*>(\d+\.\d+[^<]{0,30})<\/h[1-6]>/g,'<div class="sub-h">$1</div>');
+  // 平台标签
+  s = s.replace(/【小红书】/g, platIcon('小红书'));
+  s = s.replace(/【牛客网?】/g, platIcon('牛客网'));
+  // 舆情标签着色
+  s = s.replace(/(舆情标签[：:]\s*(?:<\/strong>)?\s*)(中性[^<，。]*)/g,'$1<span class="tag tag-neu">$2</span>');
+  s = s.replace(/(舆情标签[：:]\s*(?:<\/strong>)?\s*)(正面[^<，。]*)/g,'$1<span class="tag tag-pos">$2</span>');
+  s = s.replace(/(舆情标签[：:]\s*(?:<\/strong>)?\s*)(负面[^<，。]*)/g,'$1<span class="tag tag-neg">$2</span>');
+  // "本期无××舆情"表格 → 空态提示
+  s = s.replace(/<table>\s*<t(?:body|r)[\s\S]*?本期无([^<]{0,10}舆情)[\s\S]*?<\/table>/g,
+    '<div class="alert alert-empty"><span class="a-icon">◎</span><span>本期无$1</span></div>');
+  // 备注/说明表格 → 信息提示条
+  s = s.replace(/<table>\s*<t(?:body|r)[\s\S]*?<td[^>]*>\s*(?:<p>)?((?:备注|监测范围|报告说明)[\s\S]*?)(?:<\/p>)?\s*<\/td>[\s\S]*?<\/table>/g,
+    (m,inner)=>'<div class="alert alert-info"><span class="a-icon">ℹ</span><span>'+inner+'</span></div>');
+  // 帖子条目"第N条"包裹成卡片
+  s = s.replace(/<p><strong>(第\d+条)<\/strong><\/p>/g,'\u0001<div class="post-no">$1</div>');
+  if(s.indexOf('\u0001')>-1){
+    const chunks = s.split('\u0001');
+    s = chunks[0] + chunks.slice(1).map(c=>'<div class="post">'+c+'</div>').join('');
+  }
+  // 帖子标题(去掉前缀提到正文,标题独立成行更醒目)
+  s = s.replace(/<p><strong>帖子标题[：:]([^<]*)<\/strong><\/p>/g,
+    '<div class="field-label" style="margin-top:8px">帖子标题</div><div class="post-title">$1</div>');
+  // 核心原文摘录 → 引用块
+  s = s.replace(/<p><strong>核心原文摘录[：:]<\/strong>([\s\S]*?)<\/p>/g,
+    '<div class="field"><div class="field-label">核心原文摘录</div><blockquote class="quote">$1</blockquote></div>');
+  s = s.replace(/<p>核心原文摘录[：:]([\s\S]*?)<\/p>/g,
+    '<div class="field"><div class="field-label">核心原文摘录</div><blockquote class="quote">$1</blockquote></div>');
+  // 内容简要观点 / 舆情标签 → 字段结构
+  s = s.replace(/<p>(?:<strong>)?内容简要观点[：:](?:<\/strong>)?([\s\S]*?)<\/p>/g,
+    '<div class="field"><div class="field-label">内容简要观点</div><div class="field-body">$1</div></div>');
+  s = s.replace(/<p>(?:<strong>)?舆情标签[：:](?:<\/strong>)?\s*([\s\S]*?)<\/p>/g,
+    '<div class="field"><div class="field-label">舆情标签</div><div class="field-body">$1</div></div>');
+  // "标签：值"式短列表项 → 键值行(降低密集感)
+  s = s.replace(/<li>(?:<strong>)?([^<：:]{2,14})(?:<\/strong>)?[：:]((?:(?!<li>)[\s\S]){1,120}?)<\/li>/g,
+    (m,label,val)=>{
+      if(/<ul|<li/.test(val)) return m; // 含嵌套列表的不转换
+      const dim = /^(无|暂无)/.test(val.trim()) ? ' dim' : '';
+      return '<div class="kv"><span class="kv-label">'+label+'</span><span class="kv-value'+dim+'">'+val+'</span></div>';
+    });
+  // 小节标题按情感关键词着色(如 5.1 正面 / 5.2 中性 / 5.3 负面)
+  s = s.replace(/<div class="sub-h">([^<]*)<\/div>/g,(m,t)=>{
+    const cls = t.includes('正面')?' sub-pos':t.includes('中性')?' sub-neu':t.includes('负面')?' sub-neg':'';
+    return '<div class="sub-h'+cls+'">'+t+'</div>';
+  });
+  // 链接新窗口
+  s = s.replace(/<a /g,'<a target="_blank" rel="noopener" ');
+  return s;
+}
+
+/* ================= 生成长图 ================= */
+const imgBtn = document.getElementById('imgBtn');
+
+imgBtn.addEventListener('click', async ()=>{
+  if(typeof htmlToImage === 'undefined'){
+    setStatus('err','截图组件未加载成功，请检查网络后刷新页面重试');
+    return;
+  }
+  const page = document.querySelector('.page');
+  setStatus('loading','正在生成长图，页面越长耗时越久，请稍候…');
+  imgBtn.disabled = true;
+  document.body.classList.add('capturing');
+  // 等一帧让隐藏生效
+  await new Promise(r=>setTimeout(r,80));
+  try{
+    const dataUrl = await htmlToImage.toPng(page,{
+      pixelRatio:2,
+      backgroundColor:'#EAF7F1',
+      style:{margin:'0'}
+    });
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = (CURRENT.title||'舆情日报')+'-长图.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setStatus('ok','长图已生成并下载，把图片拖进 Outlook 正文或作为附件发送即可');
+  }catch(err){
+    console.error(err);
+    setStatus('err','长图生成失败：'+(err.message||'请刷新页面后重试'));
+  }finally{
+    document.body.classList.remove('capturing');
+    imgBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
